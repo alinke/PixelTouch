@@ -99,6 +99,8 @@ public final class R {
         public static final int bluetoothPairingString=0x7f0a0008;
         public static final int bluetooth_pair=0x7f0a0016;
         public static final int bluetooth_pairSummary=0x7f0a0017;
+        public static final int debugMode=0x7f0a002f;
+        public static final int debugModeSummary=0x7f0a0032;
         public static final int dialogTitleMatrix=0x7f0a0014;
         public static final int fadeSpeedTitle=0x7f0a002d;
         public static final int fade_speed_default_value=0x7f0a002e;
@@ -130,12 +132,14 @@ public final class R {
         public static final int pickColorTitle=0x7f0a0022;
         public static final int prefSummary=0x7f0a000e;
         public static final int prefTitle=0x7f0a000c;
+        public static final int pref_debugMode=0x7f0a0030;
+        public static final int pref_debugModeDefault=0x7f0a0031;
         public static final int pref_noSleepDefault=0x7f0a0019;
         public static final int selected_matrix=0x7f0a0011;
         public static final int selected_penSize=0x7f0a0023;
         public static final int setupInstructionsString=0x7f0a000a;
         public static final int setupInstructionsStringTitle=0x7f0a000b;
-        public static final int startupInstructions=0x7f0a002f;
+        public static final int startupInstructions=0x7f0a0033;
         public static final int title_activity_main=0x7f0a0004;
         public static final int title_activity_touch_paint=0x7f0a0003;
         public static final int versionString=0x7f0a0007;

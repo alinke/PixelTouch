@@ -37,6 +37,8 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.Random;
 
+
+
 import yuku.ambilwarna.AmbilWarnaDialog;
 import yuku.ambilwarna.AmbilWarnaDialog.OnAmbilWarnaListener;
 
@@ -106,10 +108,11 @@ import android.hardware.SensorManager;
 public class TouchPaint extends IOIOActivity   {
 	
 	
-	 private int columnIndex;   
-		private ioio.lib.api.RgbLedMatrix.Matrix KIND;  //have to do it this way because there is a matrix library conflict
+	    private int columnIndex;   
+	    private ioio.lib.api.RgbLedMatrix matrix_;
+	 	private ioio.lib.api.RgbLedMatrix.Matrix KIND;  //have to do it this way because there is a matrix library conflict
 		private android.graphics.Matrix matrix2;
-	    private static final String TAG = "PixelTouch";	  	
+	    private static final String LOG_TAG = "PixelTouch";	  	
 	  	private short[] frame_ = new short[512];
 	  	public static final Bitmap.Config FAST_BITMAP_CONFIG = Bitmap.Config.RGB_565;
 	  	private byte[] BitmapBytes;
@@ -124,6 +127,12 @@ public class TouchPaint extends IOIOActivity   {
 	  	private int deviceFound = 0;
 	  	//private Handler mHandler;
 	  	
+	  	private static final int SWIPE_MIN_DISTANCE = 120;
+		private static final int SWIPE_MAX_OFF_PATH = 250;
+		private static final int SWIPE_THRESHOLD_VELOCITY = 200;
+		private GestureDetector gestureDetector;
+		private  OnTouchListener gestureListener;
+	  	
 	  	private SharedPreferences prefs;
 		private String OKText;
 		private Resources resources;
@@ -133,6 +142,7 @@ public class TouchPaint extends IOIOActivity   {
 		
 		///********** Timers
 		private ConnectTimer connectTimer; 	
+		//private MatrixDrawTimer matrixdrawtimer; 	
 		//private int size;  //the number of pictures
 		private String imagePath;
 		private boolean noSleep = false;	   
@@ -165,6 +175,9 @@ public class TouchPaint extends IOIOActivity   {
     private Context context;
     private int selectedColor;
     private boolean prefFading;
+    private boolean debug_;
+    private int appAlreadyStarted = 0;
+   
     
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -198,6 +211,17 @@ public class TouchPaint extends IOIOActivity   {
         
         connectTimer = new ConnectTimer(30000,5000); //pop up a message if it's not connected by this timer
  		connectTimer.start(); //this timer will pop up a message box if the device is not found
+ 		
+ 		  // Gesture detection 
+        gestureDetector = new GestureDetector(new MyGestureDetector());
+        gestureListener = new View.OnTouchListener() {
+     	   public boolean onTouch(View v, MotionEvent event) { 
+     		   return gestureDetector.onTouchEvent(event);
+     		   }
+     	   };
+ 		
+ 		//matrixdrawtimer = new MatrixDrawTimer(30000,41); //24 fps : 1000 (1 second) / 24 = 41, we'll re-start the timer when it's done
+ 		
  		color = prefsColor; //color is what the touch is
  		
  		AmbilWarnaDialog(context, color, listener);	
@@ -291,6 +315,7 @@ public class TouchPaint extends IOIOActivity   {
     	      	alert.setTitle(getString(R.string.menu_about_title)).setIcon(R.drawable.icon).setMessage(getString(R.string.menu_about_summary) + "\n\n" + getString(R.string.versionString) + " " + app_ver).setNeutralButton(OKText, null).show();	
      	      	return true;  	
             case R.id.menu_prefs:
+            	appAlreadyStarted = 0;
             	Intent intent = new Intent()
    				.setClass(this,
    						com.ioiomint.pixelpaint.preferences.class);   
@@ -317,7 +342,8 @@ public class TouchPaint extends IOIOActivity   {
     {
      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this); 
        
-     noSleep = prefs.getBoolean("pref_noSleep", false);     
+     noSleep = prefs.getBoolean("pref_noSleep", false);    
+     debug_ = prefs.getBoolean("pref_debugMode", false);
          
      matrix_model = Integer.valueOf(prefs.getString(   //the selected RGB LED Matrix Type
     	        resources.getString(R.string.selected_matrix),
@@ -367,15 +393,15 @@ public class TouchPaint extends IOIOActivity   {
 	    	 BitmapInputStream = getResources().openRawResource(R.raw.selectpic);
 	    	 break;
 	     case 2:
-	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v1
+	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32_NEW; //v1
 	    	 BitmapInputStream = getResources().openRawResource(R.raw.selectpic32);
 	    	 break;
 	     case 3:
-	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32_NEW; //v2
+	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2
 	    	 BitmapInputStream = getResources().openRawResource(R.raw.selectpic32);
 	    	 break;
 	     default:	    		 
-	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32_NEW; //v2 as the default
+	    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2 as the default
 	    	 BitmapInputStream = getResources().openRawResource(R.raw.selectpic32);
      }
          
@@ -445,45 +471,53 @@ public class TouchPaint extends IOIOActivity   {
         }
     };
     
-    private void WriteImagetoMatrix() {  //here we'll take a PNG, BMP, or whatever and convert it to RGB565 via a canvas, also we'll re-size the image if necessary
-    	
-	     originalImage = BitmapFactory.decodeFile(imagePath);   		 
-		 width_original = originalImage.getWidth();
-		 height_original = originalImage.getHeight();
-		 scaleWidth = ((float) KIND.width) / width_original;
-	 	 scaleHeight = ((float) KIND.height) / height_original;
-   		 // create matrix for the manipulation
-   		 matrix2 = new Matrix();
-   		 // resize the bit map
-   		 matrix2.postScale(scaleWidth, scaleHeight);
-   		 resizedBitmap = Bitmap.createBitmap(originalImage, 0, 0, width_original, height_original, matrix2, true);
-   		 canvasBitmap = Bitmap.createBitmap(KIND.width, KIND.height, Config.RGB_565); 
-   		 Canvas canvas = new Canvas(canvasBitmap);
-   		 canvas.drawRGB(0,0,0); //a black background
-   	   	 canvas.drawBitmap(resizedBitmap, 0, 0, null);
-   		 ByteBuffer buffer = ByteBuffer.allocate(KIND.width * KIND.height *2); //Create a new buffer
-   		 canvasBitmap.copyPixelsToBuffer(buffer); //copy the bitmap 565 to the buffer		
-   		 BitmapBytes = buffer.array(); //copy the buffer into the type array
-		
-}
-    
     class IOIOThread extends BaseIOIOLooper {
-  		private ioio.lib.api.RgbLedMatrix matrix_;
+  	//	private ioio.lib.api.RgbLedMatrix matrix_;
 
   		@Override
   		protected void setup() throws ConnectionLostException {
   			matrix_ = ioio_.openRgbLedMatrix(KIND);
   			deviceFound = 1; //if we went here, then we are connected over bluetooth or USB
   			connectTimer.cancel(); //we can stop this since it was found
+  			
+  			if (debug_ == true) {  			
+	  			showToast("Bluetooth Connected");
+  			}
+  			
+  			//matrixdrawtimer.start();
+  			
+  		//	if (appAlreadyStarted == 1) {  //this means we were already running and had a IOIO disconnect so show let's show what was in the matrix
+  			//	WriteImagetoMatrix();
+  		//	}
+  			
+  			appAlreadyStarted = 1; 
   		}
 
   		@Override
   		public void loop() throws ConnectionLostException {
   		
-  			matrix_.frame(frame_); //writes whatever is in bitmap raw 565 file buffer to the RGB LCD
+  			//matrix_.frame(frame_); //writes whatever is in bitmap raw 565 file buffer to the RGB LCD
   					
   			}	
-  		}
+  		
+  		@Override
+		public void disconnected() {   			
+  			Log.i(LOG_TAG, "IOIO disconnected");
+			if (debug_ == true) {  			
+	  			showToast("Bluetooth Disconnected");
+  			}			
+		}
+
+		@Override
+		public void incompatible() {  //if the wrong firmware is there
+			//AlertDialog.Builder alert=new AlertDialog.Builder(context); //causing a crash
+			//alert.setTitle(getResources().getString(R.string.notFoundString)).setIcon(R.drawable.icon).setMessage(getResources().getString(R.string.bluetoothPairingString)).setNeutralButton(getResources().getString(R.string.OKText), null).show();	
+			showToast("Incompatbile firmware!");
+			showToast("This app won't work until you flash the IOIO with the correct firmware!");
+			showToast("You can use the IOIO Manager Android app to flash the correct firmware");
+			Log.e(LOG_TAG, "Incompatbile firmware!");
+		}
+  	}
 
   	@Override
   	protected IOIOLooper createIOIOLooper() {
@@ -532,6 +566,36 @@ public class TouchPaint extends IOIOActivity   {
    			//not used
    		}
    	}
+    
+    
+  //  public class MatrixDrawTimer extends CountDownTimer
+   //	{
+
+   		//public MatrixDrawTimer(long startTime, long interval)
+   			//{
+   				//super(startTime, interval);
+   			//}
+
+   		//@Override
+   	//	public void onFinish()
+   		//	{
+   			//matrixdrawtimer.start(); //re-start
+   				
+   			//}
+
+   		//@Override
+   	//	public void onTick(long millisUntilFinished)				{
+   		//	try {
+			//	matrix_.frame(frame_);
+		//	} catch (ConnectionLostException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			//} 
+   		//}
+   //	}
+    
+    
+    
     
     private void showNotFound() {	
 		AlertDialog.Builder alert=new AlertDialog.Builder(this);
@@ -647,7 +711,16 @@ public class TouchPaint extends IOIOActivity   {
       	   		 canvasBitmap.copyPixelsToBuffer(buffer); //copy the bitmap 565 to the buffer		
       	   		 BitmapBytes = buffer.array(); //copy the buffer into the type array
       	   		 
-      	   		 loadImage();  
+      	   		 loadImage();
+      	   		 
+      	   		 if (appAlreadyStarted == 1) {
+					 try {
+						matrix_.frame(frame_);    //this was caushing a crash so switched to a timer
+					} catch (ConnectionLostException e) {
+						e.printStackTrace();
+					}
+      	   		 }
+			
             }
         }
 
@@ -705,7 +778,19 @@ public class TouchPaint extends IOIOActivity   {
             mCurX = (int)x;
             mCurY = (int)y;
             mCurPressure = pressure;
-            mCurSize = size/penSize; //for some reason, the pen size is different on different devices so helps to have this, user can change from preferences
+          //  String s = Float.toString(size);
+          //  showToast(s);
+            
+            //*****************
+            
+            if (size == 0.0) { //didn't take the time try and figure it out but on small screen, size = 0 so did this quick hack work around to handle small screens
+            	size = .18f; 
+            	mCurSize = size/penSize;
+            }
+            else {
+            	 mCurSize = size/penSize;
+            }
+          
             mCurWidth = (int)(mCurSize*(getWidth()/3));
             if (mCurWidth < 1) mCurWidth = 1;
             if (mCurDown && mBitmap != null) {
@@ -720,4 +805,82 @@ public class TouchPaint extends IOIOActivity   {
             mFadeSteps = 0;
         }
     }
+    
+    
+    @Override
+    public void onDestroy() {
+		super.onDestroy();		
+		connectTimer.cancel();   
+		//matrixdrawtimer.cancel();
+		
+    }
+    
+    class MyGestureDetector extends SimpleOnGestureListener {       
+    	@Override        
+    	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) { 
+    		
+    		try {                
+    			if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH)
+    				return false;                // right to left swipe
+    			if(e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+    				//Toast.makeText(MainActivity.this, "Stopping Slide Show", Toast.LENGTH_SHORT).show();
+    				showToastShort("swipe event right to left"); //stop slideshow verbage
+    				//stopSlideShow();
+    				//slideShowRunning = 0;
+    				//if (dimDuringSlideShow == true) {
+    				//	screenOn();
+    				//}
+    				//sdcardImages.setOnItemClickListener(MainActivity.this); //add the onclick listener back
+    				//add onclick listener back?
+    				
+    				
+    				}  else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) { 
+    					
+    					showToastShort("swipe event left to right");
+    					//	if (slideShowRunning == 0) {    						
+    					//	slideShowRunning = 1;
+	    					//Toast.makeText(MainActivity.this, "Starting Slide Show...", Toast.LENGTH_SHORT).show();
+	    					//showToastShort(getResources().getString(R.string.slideShowStartVerbage));
+	    					//showToast(getResources().getString(R.string.slideShowStopInstructions));
+	    					//sdcardImages.setOnClickListener(null); //remove the on click listener
+	    					//if (dimDuringSlideShow == true) {
+	    					//	dimScreen();
+	    					//}
+	    					
+	    					//String[] projection = {MediaStore.Images.Media.DATA}; //maybe move this outside of slideshow since it runs everytime
+	    				        
+	    				      //  if (scanAllPics == true) {
+	    				            
+	    				          ///  cursor = managedQuery( MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+	    				            //    projection, // Which columns to return
+	    				            //    null,       // Return all rows
+	    				             //   null,
+	    				             //   null);
+	    				   //     }
+	    				      //  else {
+	    				        //	cursor = managedQuery(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+	    				              //  projection, 
+	    				              //  MediaStore.Images.Media.DATA + " like ? ",
+	    				              //  new String[] {"%pixelart%"},  
+	    				              //  null);
+	    				      //  } 
+	    					
+	    					
+	    					
+	    				//	SlideShow(); //start or resume the slideshow
+	    					
+    					//}
+    					
+    					
+    					}            } catch (Exception e) {                // nothing
+    						
+    					}            return false;
+    				}
+    		}
+    
+    
+    
+    
+    
+    
 }
