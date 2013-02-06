@@ -108,17 +108,17 @@ import android.hardware.SensorManager;
 public class TouchPaint extends IOIOActivity   {
 	
 	
-	    private int columnIndex;   
+	   // private int columnIndex;   
 	    private ioio.lib.api.RgbLedMatrix matrix_;
 	 	private ioio.lib.api.RgbLedMatrix.Matrix KIND;  //have to do it this way because there is a matrix library conflict
 		private android.graphics.Matrix matrix2;
 	    private static final String LOG_TAG = "PixelTouch";	  	
-	  	private short[] frame_ = new short[512];
+	  	private short[] frame_;
 	  	public static final Bitmap.Config FAST_BITMAP_CONFIG = Bitmap.Config.RGB_565;
 	  	private byte[] BitmapBytes;
 	  	private InputStream BitmapInputStream;
 	  	private Bitmap canvasBitmap;
-	  	private Bitmap originalImage;
+	  //	private Bitmap originalImage;
 	  	private int width_original;
 	  	private int height_original; 	  
 	  	private float scaleWidth; 
@@ -144,7 +144,7 @@ public class TouchPaint extends IOIOActivity   {
 		private ConnectTimer connectTimer; 	
 		//private MatrixDrawTimer matrixdrawtimer; 	
 		//private int size;  //the number of pictures
-		private String imagePath;
+		//private String imagePath;
 		private boolean noSleep = false;	   
 	    private int color;
 	    private int penSize;
