@@ -5,17 +5,33 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_touch_paint">TouchPaint</string>
     
-    <string name="menu_settings">Settings</string>
+   
     <string name="title_activity_main">MainActivity</string>
     
    <string name="menu_about_title">About</string> 
    <string name="menu_about_summary">http://ledpixelart.com\n\nDesigned by Open Gadgets LLC</string>
    <string name="versionString">Version</string> 
-   <string name="bluetoothPairingString">Please ensure Bluetooth pairing has been completed prior. The Bluetooth pairing code is: 4545."</string> 
+   <string name="bluetoothPairingString">Please ensure Bluetooth pairing has been completed prior. The Bluetooth pairing code is: 0000 for PIXEL V2 or 4545 for PIXEL V1."</string> 
+   
+   
+    <string name="BootloaderVersionString">Bootloader Version</string> 
+    <string name="FirmwareVersionString">Firmware Version</string> 
+    <string name="LibraryVersionString">Library Version</string> 
+    <string name="HardwareVersionString">Hardware Version</string> 
+    
+     <string name="AutoSelectPanel">Auto Select PIXEL / LED Panel</string>    
+    <string name="pref_AutoSelectPanel">pref_AutoSelectPanel</string>
+    <string name="pref_AutoSelectPanelDefault">true</string>
+    <string name="AutoSelectPanelSummary">Turn this off if you want to manually select the LED panel</string>
+   
    
    <string name="menu_instructions_title">Instructions</string>
-   <string name="setupInstructionsString">First pair your Android device to PIXEL which will show up as \'IOIO\' in Bluetooth using code 4545.\n\nJust draw on the screen with your finger and the image will appear on PIXEL.\n\nFrom the menu, you can turn off fade, clear the screen, and choose the color.\n\nNote the last image will remain displayed on PIXEL even after your Android device is switched off.</string>
+   <string name="setupInstructionsString">First Bluetooth pair your Android device to \'PIXEL\' using code 0000.\n\nJust draw on the screen with your finger and the image will appear on PIXEL.\n\nFrom the menu, you can turn off fade, clear the screen, and choose the color.</string>
    <string name="setupInstructionsStringTitle">Instructions</string>   
+   
+   <string name="menu_btPair_title">Bluetooth Pair PIXEL | Code 0000 or 4545</string>   
+   <string name="menu_color_title">Color</string>   
+   <string name="menu_clear_title">Clear</string>   
      
     <string name="prefTitle">PIXEL Touch Settings</string>
     <string name="menu_prefs_title">Settings</string>
@@ -25,13 +41,13 @@
     <string name="notFoundString">PIXEL Not Found</string>   
    
     <string name="selected_matrix">selected_matrix</string>
-    <string name="matrix">LED Panel Selection</string>
-    <string name="matrixSummary">Select your LED Panel Model</string>    
-    <string name="dialogTitleMatrix">LED Panel Selection</string>
+    <string name="matrix">PIXEL Model Selection</string>
+    <string name="matrixSummary">Select your PIXEL Model / LED Panel </string>    
+    <string name="dialogTitleMatrix">PIXEL Model Selection</string>
     <string name="matrix_default_value">3</string>   
     
     <string name="bluetooth_pair">Blueooth Pairing</string>
-    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to IOIO using code: 4545</string>
+    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to PIXEL using code: 0000 or 4545 for PIXEL V1</string>
    
     <string name="noSleep">Disable Power Savings</string>    
     <string name="pref_noSleepDefault">false</string>
@@ -41,7 +57,7 @@
     <string name="fadingDefault">false</string>
     <string name="fadingSummary"></string>
     
-    <string name="setupInstructionsStringTitle">Instructions</string> 
+    
     
     <string name="firstTime_instructions">After this completes, select Instructions from the menu to use your own images</string>
     
