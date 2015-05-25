@@ -561,6 +561,11 @@ public class TouchPaint extends IOIOActivity   {
 		    	 BitmapInputStream = getResources().openRawResource(R.raw.select32by128);
 		    	 currentResolution = 128; 
 		    	 break;	 	 	
+		     case 17:
+		    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_64x16;
+		    	 BitmapInputStream = getResources().openRawResource(R.raw.selectimage64by16);
+		    	 currentResolution = 32; 
+		    	 break;	 	 		 
 		     default:	    		 
 		    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2 as the default
 		    	 BitmapInputStream = getResources().openRawResource(R.raw.selectimage32);
